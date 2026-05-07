@@ -23,11 +23,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         try {
           await connectMongoDB();
-          console.log("Connected to DB for auth");
+          console.log("PRODUCTION AUTH: Connected to MongoDB successfully");
           const user = await User.findOne({ username: credentials.username });
 
           if (!user || !user.password) {
-            console.log("User not found or no password:", credentials.username);
+            console.log("PRODUCTION AUTH: User not found or no password for:", credentials.username);
             return null;
           }
 
@@ -37,29 +37,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           );
 
           if (!isValid) {
-            console.log("Invalid password for:", credentials.username);
+            console.log("PRODUCTION AUTH: Invalid password for:", credentials.username);
             return null;
           }
 
-          console.log("Auth successful for:", credentials.username);
+          console.log("PRODUCTION AUTH: Login successful for:", credentials.username);
+          
+          // Ensure ID is a clean string for Vercel/NextAuth serialization
           return {
             id: user._id.toString(),
             name: user.username,
             username: user.username,
           };
         } catch (error) {
-          console.error("Auth error:", error);
+          console.error("PRODUCTION AUTH: Connection/DB Error:", error);
           return null;
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        console.log("JWT Callback - User:", JSON.stringify(user));
         token.id = user.id;
         token.username = (user as any).username;
+        console.log("PRODUCTION AUTH: JWT created for user ID:", user.id);
       }
       return token;
     },

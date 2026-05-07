@@ -27,10 +27,12 @@ export async function DELETE(
     }
 
     // Invalidate Cache
-    try {
-      await redis.del(CACHE_KEYS.userItems(userId));
-    } catch (redisError) {
-      console.warn("Failed to invalidate cache:", redisError);
+    if (redis) {
+      try {
+        await redis.del(CACHE_KEYS.userItems(userId));
+      } catch (redisError) {
+        console.warn("Failed to invalidate cache:", redisError);
+      }
     }
 
     return NextResponse.json({ message: "Item deleted" }, { status: 200 });
@@ -65,10 +67,12 @@ export async function PATCH(
     }
 
     // Invalidate Cache
-    try {
-      await redis.del(CACHE_KEYS.userItems(userId));
-    } catch (redisError) {
-      console.warn("Failed to invalidate cache:", redisError);
+    if (redis) {
+      try {
+        await redis.del(CACHE_KEYS.userItems(userId));
+      } catch (redisError) {
+        console.warn("Failed to invalidate cache:", redisError);
+      }
     }
 
     return NextResponse.json({ message: "Item updated", item: updatedItem }, { status: 200 });

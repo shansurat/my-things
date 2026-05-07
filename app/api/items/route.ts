@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
     const newItem = await Item.create({ title, description, userId });
     
     // Invalidate Cache
-    try {
-      await redis.del(CACHE_KEYS.userItems(userId));
-    } catch (redisError) {
-      console.warn("Failed to invalidate cache:", redisError);
+    if (redis) {
+      try {
+        await redis.del(CACHE_KEYS.userItems(userId));
+      } catch (redisError) {
+        console.warn("Failed to invalidate cache:", redisError);
+      }
     }
     
     return NextResponse.json({ message: "Item Created", item: newItem }, { status: 201 });
@@ -48,16 +50,19 @@ export async function GET() {
     }
 
     const cacheKey = CACHE_KEYS.userItems(userId);
+    let cachedData = null;
 
     // Try Cache
-    try {
-      const cachedData = await redis.get(cacheKey);
-      if (cachedData) {
-        console.log(`GET /api/items - Cache HIT for user ${userId}`);
-        return NextResponse.json({ items: cachedData });
+    if (redis) {
+      try {
+        cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+          console.log(`GET /api/items - Cache HIT for user ${userId}`);
+          return NextResponse.json({ items: cachedData });
+        }
+      } catch (redisError) {
+        console.warn("Redis error, falling back to MongoDB:", redisError);
       }
-    } catch (redisError) {
-      console.warn("Redis error, falling back to MongoDB:", redisError);
     }
 
     console.log(`GET /api/items - Cache MISS for user ${userId}`);
@@ -67,10 +72,12 @@ export async function GET() {
     });
     
     // Set Cache (expire in 1 hour)
-    try {
-      await redis.set(cacheKey, JSON.stringify(items), { ex: 3600 });
-    } catch (redisError) {
-      console.warn("Failed to set cache:", redisError);
+    if (redis) {
+      try {
+        await redis.set(cacheKey, JSON.stringify(items), { ex: 3600 });
+      } catch (redisError) {
+        console.warn("Failed to set cache:", redisError);
+      }
     }
 
     return NextResponse.json({ items });

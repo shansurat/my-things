@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Things
 
-## Getting Started
+My Things is a personal dashboard for managing digital records. This project was developed as a college output to demonstrate the practical application of MongoDB for persistent storage and Redis for distributed caching within a modern Next.js application.
 
-First, run the development server:
+## Project Architecture
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+The application uses a full-stack architecture with Next.js 15, providing a responsive and secure environment for data management.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### MongoDB Implementation
+MongoDB is used as the primary database to store user records persistently.
+- Data is managed through Mongoose to ensure schema consistency.
+- A singleton connection pattern is used in lib/mongodb.ts to optimize database performance.
+- Each record is scoped to a specific user ID for secure data isolation.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Redis Caching
+Redis is implemented as a caching layer to improve the speed of the dashboard.
+- The system uses a cache-aside pattern to serve frequently accessed data from memory.
+- The cache is automatically updated (invalidated) whenever a user adds, edits, or deletes a record.
+- This approach reduces the number of direct requests to MongoDB, resulting in faster load times.
+- Note: The application is designed to fall back to MongoDB gracefully if Redis is not configured.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Technology Stack
 
-## Learn More
+- Framework: Next.js 15
+- Database: MongoDB
+- Caching: Redis (Upstash)
+- Authentication: Auth.js v5 (NextAuth)
+- Styling: Tailwind CSS
 
-To learn more about Next.js, take a look at the following resources:
+## Configuration & Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Environment Variables
+To run the project locally or on Vercel, the following environment variables are required:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `MONGODB_URI`: Your MongoDB connection string.
+- `AUTH_SECRET`: A secure secret for session encryption (generate with `npx auth secret`).
+- `UPSTASH_REDIS_REST_URL`: Your Redis REST URL from Upstash.
+- `UPSTASH_REDIS_REST_TOKEN`: Your Redis REST token from Upstash.
 
-## Deploy on Vercel
+### Vercel Deployment Instructions
+1. Push your code to a GitHub repository.
+2. Import the project into Vercel.
+3. In the Vercel Dashboard, navigate to **Settings > Environment Variables**.
+4. Add all the variables listed above.
+5. Set `AUTH_TRUST_HOST=true` in the environment variables to enable authentication on Vercel.
+6. Re-deploy the project.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Installation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Install dependencies: `npm install`
+2. Start the development server: `npm run dev`
