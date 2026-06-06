@@ -4,6 +4,7 @@ export interface IItem extends Document {
   title: string;
   description: string;
   userId: string;
+  dateAcquired?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -13,6 +14,7 @@ const itemSchema = new Schema<IItem>(
     title: { type: String, required: true },
     description: String,
     userId: { type: String, required: true, index: true },
+    dateAcquired: { type: Date },
   },
   { timestamps: true }
 );

@@ -2,7 +2,10 @@
 import { useState, useEffect, FormEvent } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useSession, signOut } from "next-auth/react";
 import { 
@@ -24,8 +27,43 @@ interface Thing {
   _id: string;
   title: string;
   description: string;
+  dateAcquired?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+function getAge(dateString: string) {
+  const diffTime = Math.max(0, new Date().getTime() - new Date(dateString).getTime());
+  const diffSeconds = Math.floor(diffTime / 1000);
+  
+  if (diffSeconds < 60) return `${diffSeconds} second${diffSeconds !== 1 ? 's' : ''} old`;
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} old`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} old`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} old`;
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffDays < 30) return `${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} old`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths} month${diffMonths !== 1 ? 's' : ''} old`;
+  const diffYears = Math.floor(diffDays / 365.25);
+  return `${diffYears} year${diffYears !== 1 ? 's' : ''} old`;
+}
+
+function AgeBadge({ dateString }: { dateString: string }) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <span suppressHydrationWarning className="shrink-0 inline-flex items-center px-2.5 py-1 rounded-full bg-current/10 border border-current/20 text-[10px] font-black uppercase tracking-wider shadow-sm mb-1">
+      {getAge(dateString)}
+    </span>
+  );
 }
 
 export default function Home() {
@@ -33,9 +71,11 @@ export default function Home() {
   const [things, setThings] = useState<Thing[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [dateAcquired, setDateAcquired] = useState<Date | undefined>(undefined);
   const [editId, setEditId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editDateAcquired, setEditDateAcquired] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -65,17 +105,20 @@ export default function Home() {
     await fetch("/api/items", {
       method: "POST",
       headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ title, description }),
+      body: JSON.stringify({ title, description, dateAcquired: dateAcquired ? dateAcquired.toISOString() : undefined }),
     });
 
     setTitle("");
     setDescription("");
+    setDateAcquired(undefined);
     setIsAddOpen(false);
+    toast.success("Thing added to your collection!");
     fetchThings();
   };
 
   const handleDelete = async (id: string) => {
     await fetch(`/api/items/${id}`, { method: "DELETE" });
+    toast.error("Thing deleted from your collection.");
     fetchThings();
   };
 
@@ -83,6 +126,13 @@ export default function Home() {
     setEditId(thing._id);
     setEditTitle(thing.title);
     setEditDescription(thing.description);
+    
+    if (thing.dateAcquired) {
+      setEditDateAcquired(new Date(thing.dateAcquired));
+    } else {
+      setEditDateAcquired(undefined);
+    }
+    
     setIsEditOpen(true);
   };
 
@@ -92,10 +142,11 @@ export default function Home() {
     await fetch(`/api/items/${editId}`, {
       method: "PATCH",
       headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ title: editTitle, description: editDescription }),
+      body: JSON.stringify({ title: editTitle, description: editDescription, dateAcquired: editDateAcquired ? editDateAcquired.toISOString() : undefined }),
     });
     setEditId(null);
     setIsEditOpen(false);
+    toast.success("Thing updated!");
     fetchThings();
   };
 
@@ -154,12 +205,16 @@ export default function Home() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Description</label>
-                    <Input 
+                    <Textarea 
                       placeholder="Add a short note..." 
-                      className="h-10 bg-secondary/20 border-border/40 text-sm focus:ring-1 focus:ring-primary/30 rounded-xl"
+                      className="min-h-[80px] resize-none bg-secondary/20 border-border/40 text-sm focus:ring-1 focus:ring-primary/30 rounded-xl"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Date Acquired</label>
+                    <DateTimePicker date={dateAcquired} setDate={setDateAcquired} />
                   </div>
                   <Button type="submit" className="w-full h-10 font-black text-[11px] uppercase tracking-[0.15em] rounded-xl shadow-lg shadow-primary/10">
                     Save Record
@@ -217,50 +272,57 @@ export default function Home() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {things.map((thing) => (
-                  <div
-                    key={thing._id}
+                {things
+                  .slice()
+                  .sort((a, b) => {
+                    const timeA = new Date(a.dateAcquired || a.createdAt).getTime();
+                    const timeB = new Date(b.dateAcquired || b.createdAt).getTime();
+                    // Sort descending by time (newest/youngest items first)
+                    return timeB - timeA;
+                  })
+                  .map((thing) => (
+                    <div
+                      key={thing._id}
                     className={`group relative flex flex-col justify-between p-4 border transition-all duration-300 rounded-xl min-h-[110px] hover:scale-[1.01] hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] ${getCardStyle(thing._id)}`}
                   >
-                    <div className="flex flex-col gap-2 overflow-hidden">
-                      <div className="flex flex-col gap-0.5">
-                        <h3 className="text-[14px] font-black tracking-tight leading-none text-foreground">
-                          {thing.title}
-                        </h3>
-                        <div className="flex items-center gap-2 opacity-60 text-[8px] font-black uppercase tracking-[0.1em]">
-                          <span suppressHydrationWarning>{new Date(thing.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                        </div>
-                      </div>
+                    <div className="flex flex-col gap-3 overflow-hidden">
+                      <h3 className="text-lg font-black tracking-tight leading-tight text-foreground line-clamp-2">
+                        {thing.title}
+                      </h3>
                       
                       {thing.description && (
-                        <p className="text-[12px] text-foreground/80 line-clamp-2 leading-tight font-medium">
+                        <p className="text-sm text-foreground/80 line-clamp-3 leading-snug font-medium">
                           {thing.description}
                         </p>
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="text-[8px] text-muted-foreground/60 font-black uppercase tracking-widest">
-                        {thing.updatedAt !== thing.createdAt && (
-                          <span suppressHydrationWarning>Edit · {new Date(thing.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                        )}
+                    <div className="flex items-end justify-between mt-4">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          <button 
+                            onClick={() => startEdit(thing)}
+                            className="p-1.5 hover:bg-white/10 rounded-md transition-colors bg-current/5"
+                            title="Edit"
+                          >
+                            <Edit3 className="h-3 w-3" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(thing._id)}
+                            className="p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-md transition-colors bg-current/5"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <div className="text-[8px] text-muted-foreground/60 font-black uppercase tracking-widest min-h-[12px]">
+                          {thing.updatedAt !== thing.createdAt && (
+                            <span suppressHydrationWarning>Edited {new Date(thing.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <button 
-                          onClick={() => startEdit(thing)}
-                          className="p-1.5 hover:bg-white/10 rounded-md transition-colors"
-                          title="Edit"
-                        >
-                          <Edit3 className="h-3 w-3" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(thing._id)}
-                          className="p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-md transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
+
+                      <AgeBadge dateString={thing.dateAcquired || thing.createdAt} />
                     </div>
                   </div>
                 ))}
@@ -287,11 +349,15 @@ export default function Home() {
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Description</label>
-              <Input 
-                className="h-10 bg-secondary/20 border-border/40 text-sm focus:ring-1 focus:ring-primary/30 rounded-xl"
+              <Textarea 
+                className="min-h-[80px] resize-none bg-secondary/20 border-border/40 text-sm focus:ring-1 focus:ring-primary/30 rounded-xl"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Date Acquired</label>
+              <DateTimePicker date={editDateAcquired} setDate={setEditDateAcquired} />
             </div>
             <Button type="submit" className="w-full h-10 font-black text-[11px] uppercase tracking-[0.15em] rounded-xl shadow-lg shadow-primary/10">
               Update Record

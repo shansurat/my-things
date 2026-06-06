@@ -46,11 +46,11 @@ export async function PATCH(
 
     const userId = (session.user as any).id || session.user.id;
     const { id } = await params;
-    const { title, description } = await request.json();
+    const { title, description, dateAcquired } = await request.json();
     await connectMongoDB();
     const updatedItem = await Item.findOneAndUpdate(
       { _id: id, userId: userId },
-      { title, description },
+      { title, description, dateAcquired },
       { new: true }
     );
 

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description } = await request.json();
+    const { title, description, dateAcquired } = await request.json();
     const userId = (session.user as any).id || session.user.id;
     
     if (!userId) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     await connectMongoDB();
-    const newItem = await Item.create({ title, description, userId });
+    const newItem = await Item.create({ title, description, userId, dateAcquired });
     
 
     return NextResponse.json({ message: "Item Created", item: newItem }, { status: 201 });
