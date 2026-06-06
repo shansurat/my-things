@@ -2,7 +2,7 @@
 
 ![Home Dashboard](public/home.png)
 
-A simple, beautiful digital dashboard for tracking your personal collection of items. Built as a final project for LIS 198 at UP Diliman.
+A simple, beautiful digital dashboard for tracking your personal collection of items. Built as a requirement for LIS 198: Data Structures for LIS at UP Diliman.
 
 ## Screenshots
 <p align="center">
