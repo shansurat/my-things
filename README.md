@@ -1,70 +1,69 @@
-# My Things: Digital Record Dashboard
+# My Things
 
-This documentation is prepared for LIS 198 (Data Structures) at the University of the Philippines Diliman. The project demonstrates the practical implementation of data structures, sorting algorithms, and database management within a modern web application environment.
+![Home Dashboard](public/home.png)
 
-## System Overview
-The system is a persistent digital dashboard for managing personal items. It executes Create, Read, Update, and Delete (CRUD) operations. The architecture utilizes Next.js for the application framework, MongoDB for persistent storage, and NextAuth for user authentication. The interface provides real-time chronological calculations of item age.
+A simple, beautiful digital dashboard for tracking your personal collection of items. Built as a final project for LIS 198 at UP Diliman.
 
-## Core Data Structures
+## Screenshots
+<p align="center">
+  <img src="public/create.png" alt="Create Item" width="49%">
+  &nbsp;
+  <img src="public/auth.png" alt="Authentication" width="49%">
+</p>
 
-### 1. Persistent Storage (MongoDB Collections)
-The application utilizes Document-Oriented NoSQL structures via Mongoose schemas. These are analogous to hash maps or dictionaries, offering high scalability.
+## Features
+- **Item Tracking**: Add items with their names, descriptions, and acquisition dates.
+- **Image Uploads**: Drag and drop images to associate them with your items.
+- **Real-time Age**: Watch your items age in real-time right on the dashboard.
+- **Masonry Layout**: A dynamic, beautiful grid layout that adapts to your screen and image sizes.
+- **Lightbox**: Click on any image to view it in full screen.
+- **Authentication**: Secure login system.
 
-**Item Schema (Hash-based Record):**
-- `_id`: Unique identifier (String)
-- `name`: Primary item designation (String, Required)
-- `description`: Secondary details (String)
-- `userId`: Relational identifier linking the item to a specific user (String, Indexed)
-- `dateAcquired`: Granular timestamp of acquisition (Date Object)
-- `image`: Image file associated with the item (Buffer)
-- `imageContentType`: MIME type of the uploaded image (String)
-- `createdAt`: Auto-generated insertion timestamp (Date Object)
-- `updatedAt`: Auto-generated modification timestamp (Date Object)
+## Tech Stack
+- **Frontend**: Next.js 15, React, Tailwind CSS
+- **Backend**: Next.js API Routes
+- **Database**: MongoDB (Mongoose)
+- **Authentication**: NextAuth.js
 
-**Note on Image Storage:** The application utilizes **Direct Binary Buffer Storage** for storing user-uploaded images. The image file is parsed into a Node.js `Buffer` and stored directly within the MongoDB document. While an Object Storage service (like AWS S3) is best practice for large-scale production, storing binaries directly in the database simplifies the architecture for the scope of this academic assignment.
+*Note on Images: For this project, images are stored directly in MongoDB as binary buffers. While not recommended for large-scale production apps, it perfectly suits the scope and requirements of this assignment.*
 
-**User Schema (Authentication Record):**
-- `_id`: Unique identifier (String)
-- `username`: Primary login identifier (String, Unique)
-- `password`: Hashed credential (String)
-- `createdAt`: Auto-generated insertion timestamp (Date Object)
-- `updatedAt`: Auto-generated modification timestamp (Date Object)
+## Getting Started
 
-### 2. Application State Management
-The client interface relies on dynamic array structures to manage the user interface state.
+### Prerequisites
+Make sure you have Node.js installed.
 
-- **Item Array (`Thing[]`)**: An array of objects representing the user's collection. This structure is mutable and updates in real-time following database synchronization.
-- **Dynamic Array Methods**: The application utilizes standard array operations (map, filter) for rendering lists and updating the user interface optimally.
+### MongoDB Database Setup
 
-### 3. Algorithmic Implementations
+You can use either a cloud database or a local installation.
 
-**Sorting Algorithm:**
-The application implements an active sorting algorithm on the client array. It utilizes a comparative sort (`Array.prototype.sort`) to arrange items chronologically.
-- **Time Complexity**: O(n log n).
-- **Execution**: The algorithm converts `dateAcquired` string values into numerical Unix timestamps. It computes the difference between values (`timeB - timeA`) to enforce a strict descending order. Youngest items index at zero.
+**Option A: Cloud Database (MongoDB Atlas)**
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register).
+2. Create a new database cluster (the free Shared tier is perfect).
+3. In the security menu under **Database Access**, create a new database user with a username and strong password.
+4. Under **Network Access**, add your current IP address (or allow all IPs `0.0.0.0/0` for ease of development).
+5. Go to your Databases, click **Connect** on your cluster, choose **Connect your application**, and copy the connection string.
+6. Keep this string handy. You'll need to replace `<password>` with the password you just created.
 
-**Age Calculation Algorithm:**
-A localized mathematical algorithm calculates the precise age of an item.
-- It calculates the absolute difference between the current system execution time and the `dateAcquired` timestamp.
-- It applies modulus operations and division constraints to derive seconds, minutes, hours, days, weeks, months, and years.
-- A background routine triggers the recalculation every 1000 milliseconds to simulate real-time processing.
+**Option B: Local Database**
+1. Download and install [MongoDB Community Server](https://www.mongodb.com/try/download/community).
+2. Start the MongoDB service on your machine.
+3. Your connection string will typically be: `mongodb://127.0.0.1:27017/my-things`
 
-## System Architecture
+### Setup
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env.local` file in the root directory with the following variables:
+   ```env
+   MONGODB_URI=your_mongodb_connection_string
+   AUTH_SECRET=your_nextauth_secret
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-- **Frontend**: Next.js 15 (React). Utilizes virtual DOM structures for efficient rendering.
-- **Backend API**: Next.js Serverless Route Handlers. Acts as the controller for database operations.
-- **Database**: MongoDB Atlas. Provides persistent, remote NoSQL storage.
-- **Connection Management**: Implements a singleton design pattern. The connection is cached in a global variable to prevent memory leaks and connection exhaustion during active development cycles.
-
-## Deployment and Execution
-
-### Local Environment Setup
-1. Clone the repository to the local machine.
-2. Execute `npm install` to resolve and install package dependencies.
-3. Configure the `.env.local` file with the following required environment variables:
-   - `MONGODB_URI`: Valid MongoDB connection string.
-   - `AUTH_SECRET`: Cryptographic secret for session security.
-4. Execute `npm run dev` to initialize the local development server.
-
-### Production Deployment
-The system is optimized for Vercel deployment. It requires standard Vercel environment variable configuration and the addition of `AUTH_TRUST_HOST=true` to validate internal authentication requests.
+### Production
+For Vercel deployment, ensure you add `AUTH_TRUST_HOST=true` to your environment variables.

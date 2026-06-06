@@ -296,7 +296,7 @@ export default function Home() {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
                 {things
                   .slice()
                   .sort((a, b) => {
@@ -308,18 +308,18 @@ export default function Home() {
                   .map((thing) => (
                     <div
                       key={thing._id}
-                    className={`group relative flex flex-col justify-between p-4 border transition-all duration-300 rounded-xl min-h-[110px] hover:scale-[1.01] hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] ${getCardStyle(thing._id)}`}
+                      className={`group break-inside-avoid mb-4 relative flex flex-col justify-between p-4 border transition-all duration-300 rounded-xl hover:scale-[1.01] hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] ${getCardStyle(thing._id)}`}
                   >
                     <div className="flex flex-col gap-3 overflow-hidden">
                       {thing.imageContentType && (
                         <div 
-                          className="aspect-[4/3] rounded-lg overflow-hidden bg-black/10 border border-border/10 mb-1 cursor-pointer group/image relative"
+                          className="rounded-lg overflow-hidden bg-black/10 border border-border/10 mb-1 cursor-pointer group/image relative"
                           onClick={() => setLightboxImage({ url: `/api/items/${thing._id}/image?v=${new Date(thing.updatedAt).getTime()}`, alt: thing.name })}
                         >
                           <img 
                             src={`/api/items/${thing._id}/image?v=${new Date(thing.updatedAt).getTime()}`} 
                             alt={thing.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover/image:scale-105"
+                            className="w-full h-auto block transition-transform duration-500 group-hover/image:scale-105"
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/image:opacity-100">
                             <span className="text-white text-xs font-bold drop-shadow-md">View</span>
