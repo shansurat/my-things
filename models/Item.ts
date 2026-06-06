@@ -1,20 +1,24 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IItem extends Document {
-  title: string;
+  name: string;
   description: string;
   userId: string;
   dateAcquired?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  image?: Buffer;
+  imageContentType?: string;
 }
 
 const itemSchema = new Schema<IItem>(
   {
-    title: { type: String, required: true },
+    name: { type: String, required: true },
     description: String,
     userId: { type: String, required: true, index: true },
     dateAcquired: { type: Date },
+    image: { type: Buffer },
+    imageContentType: { type: String },
   },
   { timestamps: true }
 );

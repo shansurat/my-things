@@ -48,13 +48,31 @@ export async function PATCH(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session.user as any).id || session.user.id;
     const { id } = await params;
-    const { title, description, dateAcquired } = await request.json();
+    const formData = await request.formData();
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+    const dateAcquiredString = formData.get("dateAcquired") as string;
+    const dateAcquired = dateAcquiredString ? new Date(dateAcquiredString) : undefined;
+    
+    const updateQuery: any = { $set: { name, description, dateAcquired } };
+    
+    const imageFile = formData.get("image") as File | null;
+    const removeImage = formData.get("removeImage") === "true";
+    
+    if (imageFile && imageFile.size > 0) {
+      const arrayBuffer = await imageFile.arrayBuffer();
+      updateQuery.$set.image = Buffer.from(arrayBuffer);
+      updateQuery.$set.imageContentType = imageFile.type;
+    } else if (removeImage) {
+      updateQuery.$unset = { image: 1, imageContentType: 1 };
+    }
+
     await connectMongoDB();
     const updatedItem = await Item.findOneAndUpdate(
       { _id: id, userId: userId },
-      { title, description, dateAcquired },
+      updateQuery,
       { new: true }
-    );
+    ).select('-image');
 
     if (!updatedItem) {
       return NextResponse.json({ message: "Item not found or unauthorized" }, { status: 404 });

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { ImageDropzone } from "@/components/ui/image-dropzone";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSession, signOut } from "next-auth/react";
@@ -19,8 +20,9 @@ import {
 
 interface Thing {
   _id: string;
-  title: string;
+  name: string;
   description: string;
+  imageContentType?: string;
   dateAcquired?: string;
   createdAt: string;
   updatedAt: string;
@@ -63,13 +65,18 @@ function AgeBadge({ dateString }: { dateString: string }) {
 export default function Home() {
   const { data: session } = useSession();
   const [things, setThings] = useState<Thing[]>([]);
-  const [title, setTitle] = useState("");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dateAcquired, setDateAcquired] = useState<Date | undefined>(undefined);
+  const [image, setImage] = useState<File | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
+  const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDateAcquired, setEditDateAcquired] = useState<Date | undefined>(undefined);
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editHasImage, setEditHasImage] = useState(false);
+  const [existingImageRemoved, setExistingImageRemoved] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{url: string, alt: string} | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -95,17 +102,23 @@ export default function Home() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!title) return;
+    if (!name) return;
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("description", description);
+    if (dateAcquired) formData.append("dateAcquired", dateAcquired.toISOString());
+    if (image) formData.append("image", image);
 
     await fetch("/api/items", {
       method: "POST",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ title, description, dateAcquired: dateAcquired ? dateAcquired.toISOString() : undefined }),
+      body: formData,
     });
 
-    setTitle("");
+    setName("");
     setDescription("");
     setDateAcquired(undefined);
+    setImage(null);
     setIsAddOpen(false);
     toast.success("Thing added to your collection!");
     fetchThings();
@@ -119,8 +132,10 @@ export default function Home() {
 
   const startEdit = (thing: Thing) => {
     setEditId(thing._id);
-    setEditTitle(thing.title);
+    setEditName(thing.name);
     setEditDescription(thing.description);
+    setEditHasImage(!!thing.imageContentType);
+    setExistingImageRemoved(false);
     
     if (thing.dateAcquired) {
       setEditDateAcquired(new Date(thing.dateAcquired));
@@ -133,13 +148,24 @@ export default function Home() {
 
   const handleEdit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editId || !editTitle) return;
+    if (!editId || !editName) return;
+
+    const formData = new FormData();
+    formData.append("name", editName);
+    formData.append("description", editDescription);
+    if (editDateAcquired) formData.append("dateAcquired", editDateAcquired.toISOString());
+    if (editImage) {
+      formData.append("image", editImage);
+    } else if (existingImageRemoved) {
+      formData.append("removeImage", "true");
+    }
+
     await fetch(`/api/items/${editId}`, {
       method: "PATCH",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ title: editTitle, description: editDescription, dateAcquired: editDateAcquired ? editDateAcquired.toISOString() : undefined }),
+      body: formData,
     });
     setEditId(null);
+    setEditImage(null);
     setIsEditOpen(false);
     toast.success("Thing updated!");
     fetchThings();
@@ -189,14 +215,18 @@ export default function Home() {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Title</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Name</label>
                     <Input 
                       placeholder="e.g. My Favorite Watch" 
                       className="h-10 bg-secondary/20 border-border/40 text-sm focus:ring-1 focus:ring-primary/30 rounded-xl"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Image (Optional)</label>
+                    <ImageDropzone value={image} onChange={setImage} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Description</label>
@@ -281,8 +311,23 @@ export default function Home() {
                     className={`group relative flex flex-col justify-between p-4 border transition-all duration-300 rounded-xl min-h-[110px] hover:scale-[1.01] hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] ${getCardStyle(thing._id)}`}
                   >
                     <div className="flex flex-col gap-3 overflow-hidden">
+                      {thing.imageContentType && (
+                        <div 
+                          className="aspect-[4/3] rounded-lg overflow-hidden bg-black/10 border border-border/10 mb-1 cursor-pointer group/image relative"
+                          onClick={() => setLightboxImage({ url: `/api/items/${thing._id}/image?v=${new Date(thing.updatedAt).getTime()}`, alt: thing.name })}
+                        >
+                          <img 
+                            src={`/api/items/${thing._id}/image?v=${new Date(thing.updatedAt).getTime()}`} 
+                            alt={thing.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover/image:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/image:opacity-100">
+                            <span className="text-white text-xs font-bold drop-shadow-md">View</span>
+                          </div>
+                        </div>
+                      )}
                       <h3 className="text-lg font-black tracking-tight leading-tight text-foreground line-clamp-2">
-                        {thing.title}
+                        {thing.name}
                       </h3>
                       
                       {thing.description && (
@@ -370,12 +415,21 @@ export default function Home() {
           </DialogHeader>
           <form onSubmit={handleEdit} className="p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Title</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Name</label>
               <Input 
                 className="h-10 bg-secondary/20 border-border/40 text-sm focus:ring-1 focus:ring-primary/30 rounded-xl"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Image (Optional)</label>
+              <ImageDropzone 
+                value={editImage} 
+                onChange={setEditImage} 
+                existingImageUrl={editHasImage && !existingImageRemoved ? `/api/items/${editId}/image?v=${Date.now()}` : undefined} 
+                onRemoveExisting={() => setExistingImageRemoved(true)}
               />
             </div>
             <div className="space-y-2">
@@ -394,6 +448,22 @@ export default function Home() {
               Update Record
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lightbox Dialog */}
+      <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
+        <DialogContent className="max-w-[100vw] sm:max-w-[100vw] w-screen h-screen p-0 bg-transparent border-none shadow-none overflow-hidden [&>button]:text-white [&>button]:bg-black/50 [&>button]:hover:bg-black/80 [&>button]:rounded-full [&>button]:p-2 [&>button]:right-4 [&>button]:top-4 [&>button]:z-50">
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          {lightboxImage && (
+            <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-6" onClick={() => setLightboxImage(null)}>
+              <img 
+                src={lightboxImage.url} 
+                alt={lightboxImage.alt}
+                className="max-w-full max-h-full object-contain rounded-md cursor-zoom-out drop-shadow-2xl"
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

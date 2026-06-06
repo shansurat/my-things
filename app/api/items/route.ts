@@ -11,7 +11,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, dateAcquired } = await request.json();
+    const formData = await request.formData();
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+    const dateAcquiredString = formData.get("dateAcquired") as string;
+    const dateAcquired = dateAcquiredString ? new Date(dateAcquiredString) : undefined;
+    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session.user as any).id || session.user.id;
     
@@ -19,11 +24,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User ID missing" }, { status: 400 });
     }
 
-    await connectMongoDB();
-    const newItem = await Item.create({ title, description, userId, dateAcquired });
+    let imageBuffer: Buffer | undefined = undefined;
+    let imageContentType: string | undefined = undefined;
     
+    const imageFile = formData.get("image") as File | null;
+    if (imageFile && imageFile.size > 0) {
+      const arrayBuffer = await imageFile.arrayBuffer();
+      imageBuffer = Buffer.from(arrayBuffer);
+      imageContentType = imageFile.type;
+    }
 
-    return NextResponse.json({ message: "Item Created", item: newItem }, { status: 201 });
+    await connectMongoDB();
+    const newItem = await Item.create({ name, description, userId, dateAcquired, image: imageBuffer, imageContentType });
+    
+    // Convert to plain object and remove image to save bandwidth in response
+    const itemObj = newItem.toObject();
+    delete itemObj.image;
+
+    return NextResponse.json({ message: "Item Created", item: itemObj }, { status: 201 });
   } catch (error) {
     console.error("POST /api/items - Error:", error);
     return NextResponse.json({ message: "Server Error" }, { status: 500 });
@@ -46,7 +64,7 @@ export async function GET() {
 
 
     await connectMongoDB();
-    const items = await Item.find({ userId }).sort({
+    const items = await Item.find({ userId }).select('-image').sort({
       createdAt: -1,
     });
     

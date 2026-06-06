@@ -12,12 +12,16 @@ The application utilizes Document-Oriented NoSQL structures via Mongoose schemas
 
 **Item Schema (Hash-based Record):**
 - `_id`: Unique identifier (String)
-- `title`: Primary item designation (String, Required)
+- `name`: Primary item designation (String, Required)
 - `description`: Secondary details (String)
 - `userId`: Relational identifier linking the item to a specific user (String, Indexed)
 - `dateAcquired`: Granular timestamp of acquisition (Date Object)
+- `image`: Image file associated with the item (Buffer)
+- `imageContentType`: MIME type of the uploaded image (String)
 - `createdAt`: Auto-generated insertion timestamp (Date Object)
 - `updatedAt`: Auto-generated modification timestamp (Date Object)
+
+**Note on Image Storage:** The application utilizes **Direct Binary Buffer Storage** for storing user-uploaded images. The image file is parsed into a Node.js `Buffer` and stored directly within the MongoDB document. While an Object Storage service (like AWS S3) is best practice for large-scale production, storing binaries directly in the database simplifies the architecture for the scope of this academic assignment.
 
 **User Schema (Authentication Record):**
 - `_id`: Unique identifier (String)
