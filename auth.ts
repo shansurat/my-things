@@ -57,9 +57,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.username = (user as any).username;
         console.log("PRODUCTION AUTH: JWT created for user ID:", user.id);
       }
@@ -67,7 +68,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).id = token.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).username = token.username;
       }
       return session;

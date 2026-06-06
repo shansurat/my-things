@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { title, description, dateAcquired } = await request.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session.user as any).id || session.user.id;
     
     if (!userId) {
@@ -36,6 +37,7 @@ export async function GET() {
       return NextResponse.json({ items: [] });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session.user as any).id || session.user.id;
     if (!userId) {
       return NextResponse.json({ items: [] });

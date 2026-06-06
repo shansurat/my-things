@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, FormEvent } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSession, signOut } from "next-auth/react";
 import { 
   LogOut, 
@@ -14,12 +14,6 @@ import {
   Trash2, 
   Edit3, 
   Archive, 
-  Search, 
-  LayoutDashboard, 
-  Settings, 
-  User,
-  MoreVertical,
-  PlusCircle,
   Command
 } from "lucide-react";
 
@@ -94,6 +88,7 @@ export default function Home() {
 
   useEffect(() => {
     if (session) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchThings();
     }
   }, [session]);
@@ -330,6 +325,42 @@ export default function Home() {
             )}
           </div>
       </main>
+
+      {/* Footer */}
+      <footer className="py-6 border-t border-border/50 bg-background/50">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground/60 font-medium">
+          <p>
+            A requirement for <span className="font-bold text-muted-foreground/80">LIS 198: Data Structures</span>
+          </p>
+          <div className="flex items-center gap-6">
+            <p>
+              Made by <a href="https://github.com/shansurat" target="_blank" rel="noopener noreferrer" className="font-bold text-muted-foreground/80 hover:text-primary transition-colors">Shan Surat</a>
+            </p>
+            <a 
+              href="https://github.com/shansurat/my-things" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3.5 w-3.5"
+              >
+                <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.02c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A4.8 4.8 0 0 0 8 18v4"></path>
+              </svg>
+              <span>Source</span>
+            </a>
+          </div>
+        </div>
+      </footer>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

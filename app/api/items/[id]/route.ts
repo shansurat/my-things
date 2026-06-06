@@ -14,6 +14,7 @@ export async function DELETE(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session.user as any).id || session.user.id;
     const { id } = await params;
     await connectMongoDB();
@@ -44,6 +45,7 @@ export async function PATCH(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session.user as any).id || session.user.id;
     const { id } = await params;
     const { title, description, dateAcquired } = await request.json();

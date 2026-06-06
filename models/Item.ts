@@ -21,6 +21,7 @@ const itemSchema = new Schema<IItem>(
 
 // Clear model cache in development to ensure schema changes are picked up
 if (process.env.NODE_ENV !== 'production' && mongoose.models.Item) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   delete (mongoose.models as any).Item;
 }
 
