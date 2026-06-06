@@ -1,31 +1,27 @@
 # My Things
 
-My Things is a personal dashboard for managing digital records. This project was developed as a college output to demonstrate the practical application of MongoDB for persistent storage and Redis for distributed caching within a modern Next.js application.
+My Things is a personal dashboard for managing digital records. This project was developed as a college output to demonstrate the practical application of MongoDB for persistent storage within a modern Next.js application.
 
-## Project Architecture
+## Project Architecture and Technical Implementation
 
-The application uses a full-stack architecture with Next.js 15, providing a responsive and secure environment for data management.
+The application architecture is designed for scalability and performance, utilizing persistent storage.
 
-### MongoDB Implementation
-MongoDB is used as the primary database to store user records persistently.
-- Data is managed through Mongoose to ensure schema consistency.
-- A singleton connection pattern is used in lib/mongodb.ts to optimize database performance.
-- Each record is scoped to a specific user ID for secure data isolation.
+### MongoDB Persistent Storage
+MongoDB is the primary database for user profiles and application data. The implementation focuses on connection stability and data integrity.
 
-### Redis Caching
-Redis is implemented as a caching layer to improve the speed of the dashboard.
-- The system uses a cache-aside pattern to serve frequently accessed data from memory.
-- The cache is automatically updated (invalidated) whenever a user adds, edits, or deletes a record.
-- This approach reduces the number of direct requests to MongoDB, resulting in faster load times.
-- Note: The application is designed to fall back to MongoDB gracefully if Redis is not configured.
+*   **Database Connection Management**: Located in `lib/mongodb.ts`, the `connectMongoDB` function implements a singleton pattern using a global cache. This approach ensures that a single database connection is reused across serverless function invocations and prevents connection leaks during development hot-reloads.
+*   **Data Modeling**: Application data is managed via **Mongoose** models found in the `models/` directory. These models define strict schemas for `User` and `Item` documents, ensuring type safety and consistency.
+*   **Security and Isolation**: Each `Item` document includes a `userId` field (indexed for performance). In `app/api/items/route.ts`, all database operations are scoped to the authenticated user's ID retrieved via the `auth()` session, ensuring robust multi-tenant data isolation.
+
+
 
 ## Technology Stack
 
-- Framework: Next.js 15
-- Database: MongoDB
-- Caching: Redis (Upstash)
-- Authentication: Auth.js v5 (NextAuth)
-- Styling: Tailwind CSS
+- **Framework**: Next.js 15
+- **Database**: MongoDB (Atlas)
+- **Authentication**: Auth.js v5 (NextAuth)
+- **Styling**: Tailwind CSS
+- **Middleware**: Next.js Edge Middleware for route protection
 
 ## Configuration & Deployment
 
@@ -34,8 +30,6 @@ To run the project locally or on Vercel, the following environment variables are
 
 - `MONGODB_URI`: Your MongoDB connection string.
 - `AUTH_SECRET`: A secure secret for session encryption (generate with `npx auth secret`).
-- `UPSTASH_REDIS_REST_URL`: Your Redis REST URL from Upstash.
-- `UPSTASH_REDIS_REST_TOKEN`: Your Redis REST token from Upstash.
 
 ### Vercel Deployment Instructions
 1. Push your code to a GitHub repository.

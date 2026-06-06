@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { connectMongoDB } from "@/lib/mongodb";
 import Item from "@/models/Item";
 import { NextRequest, NextResponse } from "next/server";
-import { redis, CACHE_KEYS } from "@/lib/redis";
+
 
 export async function DELETE(
   request: NextRequest,
@@ -26,14 +26,6 @@ export async function DELETE(
       return NextResponse.json({ message: "Item not found or unauthorized" }, { status: 404 });
     }
 
-    // Invalidate Cache
-    if (redis) {
-      try {
-        await redis.del(CACHE_KEYS.userItems(userId));
-      } catch (redisError) {
-        console.warn("Failed to invalidate cache:", redisError);
-      }
-    }
 
     return NextResponse.json({ message: "Item deleted" }, { status: 200 });
   } catch (error) {
@@ -66,14 +58,6 @@ export async function PATCH(
       return NextResponse.json({ message: "Item not found or unauthorized" }, { status: 404 });
     }
 
-    // Invalidate Cache
-    if (redis) {
-      try {
-        await redis.del(CACHE_KEYS.userItems(userId));
-      } catch (redisError) {
-        console.warn("Failed to invalidate cache:", redisError);
-      }
-    }
 
     return NextResponse.json({ message: "Item updated", item: updatedItem }, { status: 200 });
   } catch (error) {
