@@ -1,5 +1,7 @@
 # My Things
 
+**[Live Demo (mythings.shansurat.dev)](https://mythings.shansurat.dev)** | **[GitHub Repository](https://github.com/shansurat/my-things)**
+
 ![Home Dashboard](public/home.png)
 
 A simple, beautiful digital dashboard for tracking your personal collection of items. Built as a requirement for LIS 198: Data Structures for LIS at UP Diliman.
